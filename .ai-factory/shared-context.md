@@ -54,6 +54,7 @@ export interface ValidationResult {
   main.tsx
   pages/
     Home.tsx
+    Result.tsx
   styles/
     globals.css
     reward-ad.css
@@ -72,7 +73,10 @@ export interface ValidationResult {
 
 ### Module Dependencies (import graph)
   lib/calculator.ts → imports: lib/types
+  pages/Home.tsx → imports: lib/calculator, lib/storage, lib/types
+  pages/Result.tsx → imports: hooks/useTossAd, lib/utils, lib/types
 CRITICAL: Before creating any new function, type, or component, check the list above. If something similar exists, import and use it.
 
 ## Already Implemented (do NOT duplicate or overwrite)
 - 0001: Types & Logic (files: src/lib/types.ts, src/lib/calculator.ts)
+- 0002: Pages (files: src/pages/Home.tsx, src/pages/Result.tsx)
