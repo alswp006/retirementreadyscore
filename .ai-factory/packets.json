@@ -1,0 +1,129 @@
+[
+  {
+    "id": "0001",
+    "title": "Types & Logic",
+    "epic": "Epic 1 — 입력/검증/계산 코어",
+    "task": {
+      "description": "입력값/결과/라우트 상태 타입을 정의하고, 정수 입력 정규화(소수/음수/콤마/문자) 및 필드별 필수·범위 검증(고정 help 문구) 유틸을 구현해요. Result 화면에서 사용할 계산 함수 시그니처도 함께 고정해요.",
+      "acceptance_criteria": [
+        "parseIntegerLike('12.5')는 12를 반환해야 한다(소수점 이하는 버림).",
+        "parseIntegerLike('-5')는 5를 반환해야 한다(절댓값).",
+        "parseIntegerLike('1,000')는 1000을 반환해야 한다(구분자 제거).",
+        "parseIntegerLike('abc')는 null을 반환해야 한다(숫자 전무 → 빈 값 처리 근거).",
+        "validateField('age', null)은 {hasError:true, help:'필수 입력값이에요'}를 반환해야 한다(문구 정확히 일치).",
+        "validateField('age', 18)은 help가 정확히 '19세 이상이어야 해요'여야 한다.",
+        "validateField('age', 81)은 help가 정확히 '80세 이하로 입력해요'여야 한다.",
+        "validateField('monthlySaving', -1)은 help가 정확히 '0원 이상 입력해요'여야 한다.",
+        "validateField('monthlySaving', 10000001)은 help가 정확히 '1,000만원 이하로 입력해요'여야 한다.",
+        "validateField('currentAsset', 10000000001)은 help가 정확히 '100억원 이하로 입력해요'여야 한다.",
+        "validateField('monthlySpend', 0)은 help가 정확히 '1원 이상 입력해요'여야 한다.",
+        "validateField('monthlySpend', 20000001)은 help가 정확히 '2,000만원 이하로 입력해요'여야 한다."
+      ]
+    },
+    "covers": [
+      "입력 정수 강제 파싱 규칙(F1-AC-10)",
+      "빈 입력 에러 문구 고정(F1-AC-8)",
+      "범위 오류 help 문구 고정(F1-AC-9)",
+      "라우트 state 타입 고정(Result 직접 접근 검증 기반)"
+    ],
+    "files": [
+      "src/lib/types.ts",
+      "src/lib/calculator.ts"
+    ],
+    "definition_of_done": [
+      "TypeScript 빌드 에러가 없다.",
+      "로직 코드에서 console.error를 호출하지 않는다.",
+      "검증/파싱은 순수 함수로 구현되어 UI에서 즉시 반영 가능하다."
+    ],
+    "depends_on": [],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": "해당 없음(로직/타입 패킷)"
+  },
+  {
+    "id": "0002",
+    "title": "Pages",
+    "epic": "Epic 2 — Home 입력 + Epic 3 — Result 광고 게이팅/표시",
+    "task": {
+      "description": "Home(/)에서 4개 입력을 localStorage 프리필(실패 시 빈 값 폴백)하고, 입력 즉시 정수화·검증·버튼 활성/비활성 전환을 구현해요. Result(/result)는 state 유무를 검증해 고정 에러 UI를 렌더링하고, TossRewardAd 성공 전에는 상세 숫자를 DOM에 렌더링하지 않으며 실패 시 재시도/홈으로 fallback을 제공해요.",
+      "acceptance_criteria": [
+        "Home에서 필드 4개 중 하나라도 빈 값이면 해당 TextField는 hasError=true 및 help='필수 입력값이에요'가 즉시 노출되어야 한다(F1-AC-8).",
+        "Home에서 값이 입력되어 빈 상태가 해제되면 해당 필드는 즉시 hasError=false로 전환되어야 한다(F1-AC-8).",
+        "Home에서 범위 밖 입력 시 해당 TextField의 help는 표의 고정 문구와 정확히 일치해야 하며, 이때 '계산하기'는 disabled=true여야 한다(F1-AC-9).",
+        "Home에서 어떤 필드든 오류/빈 값으로 disabled=true였다가, 사용자가 모든 필드를 유효 범위로 수정 완료하면 추가 액션 없이 즉시 모든 오류 필드 hasError=false 및 버튼 disabled=false가 되어야 한다(F1-AC-7).",
+        "Home의 각 TextField는 입력/붙여넣기에서 '12.5'→'12', '-5'→'5', '1,000'→'1000', 'abc'→''(빈 값)으로 상태가 저장되어야 한다(F1-AC-10).",
+        "'계산하기'가 disabled=true인 상태에서 탭해도 /result 이동, lastInput 저장 시도, 계산 함수 호출이 모두 발생하지 않아야 한다(F1-AC-6).",
+        "Home 진입 시 lastInput 읽기 과정에서 예외가 발생해도 앱이 크래시 없이 Home이 렌더링되고 4개 필드는 모두 빈 값이어야 하며, 이 과정에서 console.error가 호출되면 Fail이다(F1-AC-11).",
+        "계산 성공 후 lastInput 저장 과정에서 예외가 발생해도 /result 네비게이션은 진행되어야 하고, Toast로 '입력값을 저장하지 못했어요'가 노출되어야 하며 console.error 호출은 없어야 한다(F1-AC-11).",
+        "Result에서 location.state가 null/undefined이거나 state.input/state.result가 없으면 결과 UI 대신 Paragraph.Text 2개('계산 데이터를 찾을 수 없어요','홈에서 다시 계산해 주세요')와 Button(aria-label='홈으로')만 렌더링되고, 버튼 탭 시 '/'로 이동해야 한다(F3-AC-4).",
+        "Result에서 TossRewardAd가 로드/표시 실패 상태일 때, 상세 숫자(은퇴 가능 나이/부족 자산/추가 저축액)는 DOM에 렌더링되지 않아야 하고, '광고를 불러올 수 없어요' + Button '다시 시도' + Button '홈으로'가 노출되어야 한다. '다시 시도' 탭 시 광고가 재요청(재마운트/재시도)되어야 하며 '홈으로' 탭 시 '/'로 이동해야 한다(F3-AC-5).",
+        "Result에서 retirementPossibleAge===null이면 '은퇴 가능 나이' 값은 정확히 '현재 저축으로는 계산할 수 없어요'로 표시되어야 하며, 부족 자산/추가 저축 필요액 2개는 formatCurrency/formatNumber 적용된 숫자 텍스트로 표시되어야 한다(F3-AC-6).",
+        "Result에서 '다시 계산하기'→Home에서 1개 이상 값 수정→'계산하기'→Result로 재진입 시 3개 결과가 수정된 입력값 기준으로 바뀌어야 한다(F3-AC-7)."
+      ]
+    },
+    "covers": [
+      "Home 입력 폼/검증/disabled 무동작/정수화(F1-AC-6~10)",
+      "localStorage 읽기/쓰기 예외 폴백+Toast(F1-AC-11)",
+      "Result 직접 접근 에러 UI(F3-AC-4)",
+      "리워드 광고 실패 fallback+재시도 및 숫자 DOM 비노출(F3-AC-5)",
+      "retirementPossibleAge null 문구 고정(F3-AC-6)",
+      "재계산 사이클(F3-AC-7)"
+    ],
+    "files": [
+      "src/pages/Home.tsx",
+      "src/pages/Result.tsx"
+    ],
+    "definition_of_done": [
+      "TDS 컴포넌트(Top/Spacing/TextField/Button/ListRow/Paragraph.Text/Toast)만으로 화면이 구성된다.",
+      "Spacing 외의 방식으로 margin/padding을 오버라이드하지 않는다(인라인 margin/padding 금지).",
+      "Button은 variant='fill'|'weak'만 사용하고, TextField는 variant를 명시한다.",
+      "formatNumber/formatCurrency를 결과 숫자 표시에 사용한다.",
+      "console.error를 호출하지 않는다."
+    ],
+    "depends_on": [
+      "0001"
+    ],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [
+      "react-router-dom",
+      "@toss/tds-mobile"
+    ],
+    "ui_requirements": "=== TDS SCREEN BLUEPRINT ===\n## Screen: 홈 입력 (/)  \n\n### Layout\n```tsx\n// Pseudocode showing TDS component structure — NOT runnable code\n<Top title={<Top.TitleParagraph>은퇴 계산해요</Top.TitleParagraph>} />\n\n<Spacing size={16} />\n\n// Pattern A: Hero Summary Card (설명용)\n<div style={{ backgroundColor: 'var(--tds-color-grey50)', borderRadius: 16, padding: 20 }}>\n  <Paragraph.Text typography=\"st11\" color=\"secondary\">입력값으로 60세 기준을 계산해요</Paragraph.Text>\n  <Spacing size={8} />\n  <Paragraph.Text typography=\"st8\" color=\"tertiary\">나이, 월저축, 현재자산, 월지출을 입력해요</Paragraph.Text>\n</div>\n\n<Spacing size={24} />\n<Paragraph.Text typography=\"t4\">기본 정보</Paragraph.Text>\n<Spacing size={12} />\n\n<TextField variant=\"box\" label=\"나이\" value={age} onChange={onChangeAge} hasError={ageError} help={ageHelp} />\n<Spacing size={12} />\n<TextField variant=\"box\" label=\"월저축(원)\" value={monthlySaving} onChange={onChangeMonthlySaving} hasError={savingError} help={savingHelp} />\n<Spacing size={12} />\n<TextField variant=\"box\" label=\"현재자산(원)\" value={currentAsset} onChange={onChangeCurrentAsset} hasError={assetError} help={assetHelp} />\n<Spacing size={12} />\n<TextField variant=\"box\" label=\"월지출(원)\" value={monthlySpend} onChange={onChangeMonthlySpend} hasError={spendError} help={spendHelp} />\n\n<Spacing size={24} />\n\n// 저장 실패(쓰기 예외) 시 노출\n<Toast open={showSaveFailToast} position=\"bottom\" onClose={closeToast}>\n  입력값을 저장하지 못했어요\n</Toast>\n\n// Pattern D: Bottom Fixed CTA\n<div style={{\n  position: 'fixed', bottom: 0, left: 0, right: 0,\n  padding: 16,\n  paddingBottom: 'calc(16px + env(safe-area-inset-bottom))',\n  backgroundColor: 'var(--tds-color-background)'\n}}>\n  <Button\n    variant=\"fill\"\n    size=\"large\"\n    // disabled={isDisabled}\n    onClick={handleCalculate}   // disabled=true면 이 핸들러가 호출되면 Fail (F1-AC-6)\n  >\n    계산하기\n  </Button>\n</div>\n```\n\n### States\n- Loading:\n  - `TextField` 4개는 `value=\"\"`로 렌더링\n  - 버튼은 `disabled=true`로 시작(초기 검증 전까지)\n- Empty (Pattern E):\n```tsx\n<div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '64px 16px', gap: 16 }}>\n  <Paragraph.Text typography=\"st6\" color=\"tertiary\">입력값을 넣고 계산해볼까요</Paragraph.Text>\n  <Button variant=\"weak\" size=\"medium\" onClick={focusFirstField}>나이부터 입력해요</Button>\n</div>\n```\n- Error:\n  - `Paragraph.Text typography=\"st6\"`: `입력값을 불러오지 못했어요`\n  - `Button variant=\"weak\"`: `다시 시도` (탭 시 재초기화)\n\n### Interactions\n- 각 TextField 입력 시(키보드/붙여넣기 포함) 정수만 상태로 반영:\n  - `12.5` → `12`, `-5` → `5`, `1,000` → `1000`, 숫자 없는 문자열 → 빈 값 처리(F1-AC-10)\n- 필드가 빈 문자열이면 즉시 `hasError=true`, `help=\"필수 입력값이에요\"`(F1-AC-8)\n- 범위 밖이면 즉시 `hasError=true` + 지정된 `help` 문구로 고정(F1-AC-9) + “계산하기”는 `disabled=true`\n- 사용자가 오류를 모두 수정하면 **추가 액션 없이 즉시** 오류 해제 + 버튼 활성화(F1-AC-7)\n- “계산하기” 탭:\n  - 활성화 상태에서만 동작(비활성 탭은 라우팅/저장/계산 모두 발생하면 Fail, F1-AC-6)\n  - 햅틱: `generateHapticFeedback({ type: 'success' })`\n  - 성공 시 `/result`로 이동 + (가능하면) `lastInput` 저장 시도\n  - 저장 예외 발생 시에도 `/result` 이동은 유지 + Toast `입력값을 저장하지 못했어요` 노출(F1-AC-11)\n- Home 진입 시 `lastInput` 읽기 예외가 나도 크래시 없이 렌더링 + 4개 필드는 모두 빈 값(F1-AC-11)\n\n\n---\n\n## Screen: 결과 (/result)\n\n### Layout\n```tsx\n<Top title={<Top.TitleParagraph>계산 결과예요</Top.TitleParagraph>} />\n\n<Spacing size={16} />\n\n// (1) 직접 접근/상태 없음 에러 UI (F3-AC-4) — 결과 UI 대신 아래만 렌더링\n<>\n  <Paragraph.Text typography=\"st6\">계산 데이터를 찾을 수 없어요</Paragraph.Text>\n  <Spacing size={8} />\n  <Paragraph.Text typography=\"st6\" color=\"tertiary\">홈에서 다시 계산해 주세요</Paragraph.Text>\n  <Spacing size={16} />\n  <Button\n    variant=\"fill\"\n    size=\"large\"\n    // aria-label=\"홈으로\"  (AC 요구사항)\n    onClick={goHome}\n  >\n    홈으로\n  </Button>\n</>\n\n// (2) 정상 플로우: 리워드 광고 게이팅 후 결과 공개\n<>\n  <TossRewardAd /* 광고 성공 전엔 상세 숫자 DOM 렌더링 금지 */>\n    <div style={{ backgroundColor: 'var(--tds-color-grey50)', borderRadius: 16, padding: 20 }}>\n      <Paragraph.Text typography=\"st11\" color=\"secondary\">핵심 요약</Paragraph.Text>\n      <Spacing size={8} />\n      <Paragraph.Text typography=\"t4\">은퇴 가능 나이</Paragraph.Text>\n      <Spacing size={8} />\n      <Paragraph.Text typography=\"t1\">\n        {retirementPossibleAge === null ? '현재 저축으로는 계산할 수 없어요' : `${retirementPossibleAge}세`}\n      </Paragraph.Text>\n    </div>\n\n    <Spacing size={24} />\n    <Paragraph.Text typography=\"t4\">60세 기준</Paragraph.Text>\n    <Spacing size={12} />\n\n    <ListRow contents={<ListRow.Texts type=\"2RowTypeA\" top=\"부족 자산\" bottom={shortfallAssetText} />} />\n    <ListRow contents={<ListRow.Texts type=\"2RowTypeA\" top=\"월 추가 저축 필요액\" bottom={additionalSavingText} />} />\n\n    <Spacing size={24} />\n    <Button variant=\"weak\" size=\"large\" onClick={goRecalculate}>다시 계산하기</Button>\n  </TossRewardAd>\n\n  // 광고 로드/표시 실패 시 fallback (F3-AC-5) — 상세 숫자 DOM 미노출 유지\n  <>\n    <Paragraph.Text typography=\"st6\">광고를 불러올 수 없어요</Paragraph.Text>\n    <Spacing size={12} />\n    <Button variant=\"fill\" size=\"large\" onClick={retryAd}>다시 시도</Button>\n    <Spacing size={8} />\n    <Button variant=\"weak\" size=\"large\" onClick={goHome}>홈으로</Button>\n  </>\n</>\n```\n\n### States\n- Loading:\n  - 광고 로딩 중: `Paragraph.Text typography=\"st6\" color=\"tertiary\"`로 `광고를 불러오고 있어요`만 노출\n  - 이 상태에서 3개 상세 숫자(은퇴 가능 나이/부족 자산/추가 저축액)는 DOM에 렌더링하지 않음\n- Empty (Pattern E):\n```tsx\n<div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '64px 16px', gap: 16 }}>\n  <Paragraph.Text typography=\"st6\" color=\"tertiary\">아직 결과가 없어요</Paragraph.Text>\n  <Button variant=\"weak\" size=\"medium\" onClick={goHome}>홈에서 계산해요</Button>\n</div>\n```\n- Error:\n  - (직접 접근/상태 없음) F3-AC-4의 고정 문구/버튼만 렌더링\n\n### Interactions\n- 페이지 진입 시:\n  - `location.state`가 없거나 `state.input/state.result`가 없으면 결과 UI 대신 고정 에러 UI만 렌더링(F3-AC-4)\n- 리워드 광고 게이팅:\n  - 광고 성공 전에는 상세 숫자 3종이 DOM에 렌더링되면 Fail(F3-AC-5)\n  - 광고 로드 실패 시:\n    - `광고를 불러올 수 없어요` + `다시 시도` + `홈으로` 노출(F3-AC-5)\n    - `다시 시도` 탭 시 광고 재요청(재마운트/재시도)\n- “다시 계산하기” 탭:\n  - 햅틱: `generateHapticFeedback({ type: 'success' })`\n  - Home으로 이동(프리필 유지) → 값 1개 이상 수정 후 재계산하면 결과 3종이 새 입력값 기준으로 바뀌어야 함(F3-AC-7)\n- “홈으로” 탭:\n  - 햅틱: `generateHapticFeedback({ type: 'tickWeak' })`\n  - `/`로 이동\n- `retirementPossibleAge === null`이면 해당 값은 **정확히** `현재 저축으로는 계산할 수 없어요`로 표시(F3-AC-6)  \n  - 이때도 부족 자산/추가 저축 필요액 2개는 숫자 포맷 텍스트로 표시되어\n"
+  },
+  {
+    "id": "0003",
+    "title": "Routing & Integration",
+    "epic": "Epic 3 — 라우팅 연결",
+    "task": {
+      "description": "React Router로 '/'(Home), '/result'(Result) 라우트를 연결하고, Result로 이동 시 location.state에 input/result(및 저장 실패 플래그 등 최소 메타)를 전달하는 흐름을 정리해요. main.tsx는 수정하지 않고 App.tsx에서만 라우팅을 완성해요.",
+      "acceptance_criteria": [
+        "App.tsx는 BrowserRouter(또는 템플릿에서 사용 중인 Router) 하위에 '/'와 '/result' 라우트를 등록해야 하며, 각 경로에서 Home/Result 컴포넌트가 렌더링되어야 한다.",
+        "Home→Result 이동은 react-router-dom의 navigate로 수행되며, Result는 useLocation으로 state를 읽어 F3-AC-4의 분기(없으면 에러 UI)를 수행할 수 있어야 한다."
+      ]
+    },
+    "covers": [
+      "라우팅 구성",
+      "Result state 전달 기반 마련"
+    ],
+    "files": [
+      "src/App.tsx"
+    ],
+    "definition_of_done": [
+      "main.tsx를 수정하지 않는다(@AI:ANCHOR 유지).",
+      "라우팅이 모바일 환경에서 전체 화면으로 정상 동작한다.",
+      "빌드/런타임 에러 없이 진입 경로(/, /result)가 동작한다."
+    ],
+    "depends_on": [
+      "0001",
+      "0002"
+    ],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [
+      "react-router-dom"
+    ],
+    "ui_requirements": "=== TDS SCREEN BLUEPRINT ===\n## Screen: 홈 입력 (/)  \n\n### Layout\n```tsx\n// Pseudocode showing TDS component structure — NOT runnable code\n<Top title={<Top.TitleParagraph>은퇴 계산해요</Top.TitleParagraph>} />\n\n<Spacing size={16} />\n\n// Pattern A: Hero Summary Card (설명용)\n<div style={{ backgroundColor: 'var(--tds-color-grey50)', borderRadius: 16, padding: 20 }}>\n  <Paragraph.Text typography=\"st11\" color=\"secondary\">입력값으로 60세 기준을 계산해요</Paragraph.Text>\n  <Spacing size={8} />\n  <Paragraph.Text typography=\"st8\" color=\"tertiary\">나이, 월저축, 현재자산, 월지출을 입력해요</Paragraph.Text>\n</div>\n\n<Spacing size={24} />\n<Paragraph.Text typography=\"t4\">기본 정보</Paragraph.Text>\n<Spacing size={12} />\n\n<TextField variant=\"box\" label=\"나이\" value={age} onChange={onChangeAge} hasError={ageError} help={ageHelp} />\n<Spacing size={12} />\n<TextField variant=\"box\" label=\"월저축(원)\" value={monthlySaving} onChange={onChangeMonthlySaving} hasError={savingError} help={savingHelp} />\n<Spacing size={12} />\n<TextField variant=\"box\" label=\"현재자산(원)\" value={currentAsset} onChange={onChangeCurrentAsset} hasError={assetError} help={assetHelp} />\n<Spacing size={12} />\n<TextField variant=\"box\" label=\"월지출(원)\" value={monthlySpend} onChange={onChangeMonthlySpend} hasError={spendError} help={spendHelp} />\n\n<Spacing size={24} />\n\n// 저장 실패(쓰기 예외) 시 노출\n<Toast open={showSaveFailToast} position=\"bottom\" onClose={closeToast}>\n  입력값을 저장하지 못했어요\n</Toast>\n\n// Pattern D: Bottom Fixed CTA\n<div style={{\n  position: 'fixed', bottom: 0, left: 0, right: 0,\n  padding: 16,\n  paddingBottom: 'calc(16px + env(safe-area-inset-bottom))',\n  backgroundColor: 'var(--tds-color-background)'\n}}>\n  <Button\n    variant=\"fill\"\n    size=\"large\"\n    // disabled={isDisabled}\n    onClick={handleCalculate}   // disabled=true면 이 핸들러가 호출되면 Fail (F1-AC-6)\n  >\n    계산하기\n  </Button>\n</div>\n```\n\n---\n\n## Screen: 결과 (/result)\n\n### Layout\n```tsx\n<Top title={<Top.TitleParagraph>계산 결과예요</Top.TitleParagraph>} />\n\n<Spacing size={16} />\n\n// (1) 직접 접근/상태 없음 에러 UI (F3-AC-4) — 결과 UI 대신 아래만 렌더링\n<>\n  <Paragraph.Text typography=\"st6\">계산 데이터를 찾을 수 없어요</Paragraph.Text>\n  <Spacing size={8} />\n  <Paragraph.Text typography=\"st6\" color=\"tertiary\">홈에서 다시 계산해 주세요</Paragraph.Text>\n  <Spacing size={16} />\n  <Button\n    variant=\"fill\"\n    size=\"large\"\n    // aria-label=\"홈으로\"  (AC 요구사항)\n    onClick={goHome}\n  >\n    홈으로\n  </Button>\n</>\n```\n"
+  }
+]
